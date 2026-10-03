@@ -67,6 +67,40 @@
       <span>共 {{ total }} 条数据整编记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
+
+    <section class="panel">
+      <header class="panel-head">
+        <div>
+          <h3 class="panel-title">泥沙监测整编清单</h3>
+          <p class="panel-desc">
+            读取泥沙监测已提交复核的记录（含野外终端草稿提交后的结果，来源批次可回溯）；
+            仍处暂存、未提交的草稿不进入整编。
+          </p>
+        </div>
+        <button class="btn" type="button" @click="reloadSediment">刷新整编清单</button>
+      </header>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th v-for="column in sedimentColumns" :key="column">{{ column }}</th>
+            <th>来源批次</th>
+            <th>当前状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in sedimentRows" :key="String(row.id)">
+            <td v-for="column in sedimentColumns" :key="column">{{ row[column] ?? '—' }}</td>
+            <td>{{ row['来源批次'] ?? '—' }}</td>
+            <td>{{ row.status }}</td>
+          </tr>
+          <tr v-if="!sedimentRows.length">
+            <td :colspan="sedimentColumns.length + 2" class="empty-state">
+              暂无已提交复核的泥沙监测记录，草稿提交后此处自动可见
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
   </section>
 </template>
 
@@ -98,6 +132,17 @@ const statusSummary = computed(() =>
     count: rows.value.filter((row) => String(row.status) === status).length,
   })),
 )
+
+// 整编只取已进入复核流程（待审核/已通过）的泥沙记录；暂存中的草稿不入整编。
+const sedimentColumns = ["记录编号", "站点编号", "采样时间", "含沙量", "输沙率", "颗粒级配", "采样人"]
+const sedimentRows = ref<EntryRow[]>([])
+
+function reloadSediment() {
+  const payload = listEntries('sediment')
+  sedimentRows.value = payload.items.filter((row) =>
+    ['待审核', '已通过'].includes(String(row.status)),
+  )
+}
 
 function resetFilters() {
   filters.value = {}
@@ -133,5 +178,8 @@ function reload() {
   }
 }
 
-onMounted(reload)
+onMounted(() => {
+  reload()
+  reloadSediment()
+})
 </script>

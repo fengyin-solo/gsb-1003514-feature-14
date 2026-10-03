@@ -68,4 +68,10 @@ npm run build
 - 字段、状态、动作与流转目标集中在 `frontend/src/data/modules.ts`；示例数据在
   `frontend/src/data/seed.ts`。
 - 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
+- 泥沙监测支持采样批次暂存：野外终端在「泥沙监测」页先存草稿（含沙量、输沙率、颗粒级配），
+  可随时离开再进入继续录，最后一次提交复核。规则集中在 `frontend/src/api/sediment-draft-service.ts`：
+  同一草稿重复提交只形成一个复核批次；提交中断后从不完整样本继续；已归档（已通过）样本不被
+  草稿覆盖，冲突时未归档记录以草稿为准；缺采样人的草稿样本与旧记录按设备班次回填。草稿与复核
+  批次持久化在 `hydrology-monitor-station:sediment-drafts`，「数据整编」页的泥沙整编清单读取
+  草稿提交后的结果。
 - 想回到初始数据：清掉浏览器里 `hydrology-monitor-station:entries` 这一项，或调用 `resetModule(模块)`。
