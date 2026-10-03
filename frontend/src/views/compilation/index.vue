@@ -63,6 +63,38 @@
       </tbody>
     </table>
 
+    <section class="panel">
+      <h3 class="panel-title">泥沙复核批次（草稿提交后的结果）</h3>
+      <p class="panel-desc">野外终端的采样批次草稿提交复核后在这里汇总，未提交的草稿不进入整编。</p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>复核批次</th>
+            <th>来源草稿</th>
+            <th>提交时间</th>
+            <th>样本数</th>
+            <th>写入记录数</th>
+            <th>冲突裁决</th>
+            <th>班次回填</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="batch in sedimentBatches" :key="batch.batchId">
+            <td>{{ batch.batchId }}</td>
+            <td>{{ batch.draftId }}</td>
+            <td>{{ batch.submittedAt }}</td>
+            <td>{{ batch.total }}</td>
+            <td>{{ batch.written }}</td>
+            <td>{{ batch.conflicts.length }}</td>
+            <td>{{ batch.backfilled.length }}</td>
+          </tr>
+          <tr v-if="!sedimentBatches.length">
+            <td colspan="7" class="empty-state">暂无泥沙复核批次，野外终端草稿提交复核后会出现在这里</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
     <footer class="page-foot">
       <span>共 {{ total }} 条数据整编记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
@@ -79,7 +111,8 @@ import {
   moduleMeta,
   runAction as applyAction,
 } from '@/api/local-service'
-import type { EntryRow } from '@/data/types'
+import { listSedimentReviewBatches } from '@/api/sediment-drafts'
+import type { EntryRow, SedimentReviewBatch } from '@/data/types'
 
 const meta = moduleMeta('compilation')
 const columns = ["成果编号", "整编年份", "站点编号", "整编类型", "原始记录数", "整编人", "审核人", "整编状态"]
@@ -92,6 +125,7 @@ const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+const sedimentBatches = ref<SedimentReviewBatch[]>([])
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
@@ -128,6 +162,7 @@ function reload() {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    sedimentBatches.value = listSedimentReviewBatches()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '数据整编列表读取失败'
   }

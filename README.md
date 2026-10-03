@@ -69,3 +69,20 @@ npm run build
   `frontend/src/data/seed.ts`。
 - 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
 - 想回到初始数据：清掉浏览器里 `hydrology-monitor-station:entries` 这一项，或调用 `resetModule(模块)`。
+
+## 泥沙采样批次草稿
+
+泥沙监测支持野外终端「暂存 → 恢复 → 一次性提交复核」的录沙流程，业务规则集中在
+`frontend/src/api/sediment-drafts.ts`，持久化在 `frontend/src/data/sediment-drafts.ts`
+（`hydrology-monitor-station:sediment-drafts` 与 `hydrology-monitor-station:sediment-review-batches`
+两个 localStorage 键，与主表分开）：
+
+- 草稿只写草稿存储，不进主表；未提交的草稿对数据整编、运营概览不可见。
+- 提交复核以草稿号为幂等键：同一草稿重复提交只形成第一次的复核批次，提交后草稿锁定。
+- 提交按样本逐条处理，缺记录编号/站点编号/采样时间/含沙量即中断；中断前已写入的样本
+  保留断点，补全后重新提交从断点继续，且仍归入同一个复核批次。
+- 草稿与既有复核结果冲突时的裁决：既有记录已归档（已通过）的以已归档为准，草稿样本
+  不写入；未归档的既有记录以野外终端草稿为准并置回待审核。裁决明细记入复核批次。
+- 缺采样人的样本在提交时按当前设备班次（会话里的值班人与班次）回填。
+- 数据整编页面的「泥沙复核批次」清单读取提交后的结果（批次、写入记录数、冲突裁决、
+  班次回填），是其它入口查看草稿提交结果的出口。
